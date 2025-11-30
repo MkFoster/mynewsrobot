@@ -1,0 +1,64 @@
+# Topic priorities help the LLM select the top 20 articles from all discovered content
+# Higher priority = more likely to be included in the weekly summary
+# User bookmarks always get highest priority (11) automatically
+
+topics:
+    - name: "AI/Machine Learning"
+      keywords:
+          - "AI"
+          - "artificial intelligence"
+          - "machine learning"
+          - "LLM"
+          - "GPT"
+          - "neural network"
+          - "deep learning"
+          - "Gemini"
+          - "Claude"
+      priority: 10
+
+    - name: "Web Development"
+      keywords:
+          - "JavaScript"
+          - "TypeScript"
+          - "React"
+          - "Vue"
+          - "Angular"
+          - "CSS"
+          - "HTML"
+          - "frontend"
+          - "backend"
+          - "WordPress"
+          - "web development"
+      priority: 9
+
+    - name: "Cloud/DevOps"
+      keywords:
+          - "AWS"
+          - "GCP"
+          - "Google Cloud"
+          - "Azure"
+          - "Kubernetes"
+          - "Docker"
+          - "DevOps"
+          - "CI/CD"
+          - "cloud"
+          - "serverless"
+      priority: 8
+
+    - name: "Programming"
+      keywords:
+          - "Python"
+          - "Java"
+          - "Go"
+          - "Rust"
+          - "C++"
+          - "programming"
+          - "software development"
+          - "coding"
+      priority: 7
+
+    # Add more topics as needed
+    # Example:
+    # - name: "Security"
+    #   keywords: ["security", "cybersecurity", "encryption", "authentication"]
+    #   priority: 6

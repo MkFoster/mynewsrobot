@@ -1,0 +1,24 @@
+wordpress:
+    site_url: "https://mkfoster.com"
+    api_endpoint: "/wp-json/wp/v2"
+
+    # Credentials are loaded from environment variables:
+    # WORDPRESS_USERNAME
+    # WORDPRESS_APP_PASSWORD
+
+    post_defaults:
+        status: "private" # Posts are private by default
+        categories: ["WeeklySummary"]
+        format: "standard"
+        comment_status: "closed"
+        ping_status: "closed"
+
+    featured_image:
+        aspect_ratio: "3:2"
+        min_width: 1200
+        quality: 90
+
+    # API request settings
+    timeout: 30 # seconds
+    retry_attempts: 3
+    retry_delay: 5 # seconds

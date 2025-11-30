@@ -1,0 +1,43 @@
+# List of specific page URLs to check for news articles every week
+# Agent will scrape these pages to discover article links
+# All sources are checked weekly; topic priorities determine article selection
+# Supports both HTML pages and RSS/Atom feeds
+
+news_sources:
+    tech:
+        pages:
+            - url: "https://arstechnica.com/feed/"
+              name: "Ars Technica - RSS Feed"
+              type: "rss"
+            - url: "https://techcrunch.com/feed/"
+              name: "TechCrunch - RSS Feed"
+              type: "rss"
+            - url: "https://www.theverge.com/rss/index.xml"
+              name: "The Verge - RSS Feed"
+              type: "rss"
+
+    web_development:
+        pages:
+            - url: "https://css-tricks.com/feed/"
+              name: "CSS-Tricks - RSS Feed"
+              type: "rss"
+            - url: "https://www.smashingmagazine.com/feed/"
+              name: "Smashing Magazine - RSS Feed"
+              type: "rss"
+
+    ai_ml:
+        pages:
+            - url: "https://openai.com/blog/rss/"
+              name: "OpenAI Blog - RSS Feed"
+              type: "rss"
+            - url: "https://blog.google/technology/ai/"
+              name: "Google AI Blog"
+              type: "html"
+
+    # Add more categories and sources as needed
+    # Example:
+    # cloud:
+    #     pages:
+    #         - url: "https://cloud.google.com/blog/rss"
+    #           name: "Google Cloud Blog"
+    #           type: "rss"

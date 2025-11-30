@@ -1,0 +1,42 @@
+style_examples:
+    source_sites:
+        - "https://mkfoster.com"
+        - "https://fireflywp.com"
+
+    characteristics:
+        - "Clear and concise technical writing"
+        - "Conversational but professional tone"
+        - "Use of concrete examples"
+        - "Actionable insights"
+        - "Direct and to-the-point"
+        - "Minimal jargon unless necessary"
+
+    newsletter_format:
+        title_pattern: "Mark's Weekly Update: {date}"
+        date_format: "%B %dth, %Y"
+        excerpt_length: "150-200 words"
+        item_summary_length: "~200 tokens (roughly 150 words)"
+
+    summary_structure:
+        - section: "Introduction"
+          content: "Brief overview of the week's themes (2-3 sentences)"
+
+        - section: "Articles"
+          content: "20 article summaries with links"
+          format: |
+              ## {Article Title}
+              {Summary in ~200 tokens}
+              [Read more]({article_url})
+
+        - section: "Conclusion"
+          content: "Key takeaways or themes (2-3 sentences)"
+
+    # Style guidelines for the LLM
+    writing_guidelines:
+        - "Keep each article summary under 200 tokens (~150 words)"
+        - "Always include a link to the original article"
+        - "Start with the most important information"
+        - "Use active voice"
+        - "Be specific with numbers and facts"
+        - "Avoid superlatives unless warranted"
+        - "Make it scannable with clear paragraph breaks"
