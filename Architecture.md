@@ -30,30 +30,30 @@ This is a **smart RSS reader**, not a web scraper:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                     MyNewsRobot Workflow                     │
+│                     MyNewsRobot Workflow                    │
 ├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  Step 1: Discovery (news_scraper.py)                       │
+│                                                             │
+│  Step 1: Discovery (news_scraper.py)                        │
 │  📰 Fetch articles from RSS feeds                           │
 │  → Output: discovered_articles.json (~100+ articles)        │
-│                                                              │
+│                                                             │
 │  Step 2: Analysis (ContentAnalysisAgent)                    │
 │  🔍 Load topic priorities                                   │
 │  🔍 Match articles to topics by keywords                    │
 │  🔍 Rank by priority (7-11 scale)                          │
 │  🔍 Select top 20 (max 10 per topic for diversity)         │
 │  → Output: analyzed_articles.json (20 articles)             │
-│                                                              │
+│                                                             │
 │  Step 3: Writing (ContentWritingAgent)                      │
 │  ✍️ Generate personalized summaries (~150 words each)      │
 │  ✍️ Format as HTML for WordPress                           │
 │  → Output: newsletter_draft.html                            │
-│                                                              │
+│                                                             │
 │  Step 4: Publishing (PublishingAgent)                       │
 │  🚀 Create private WordPress post                          │
 │  🚀 Add "WeeklySummary" category                           │
 │  → Output: WordPress post URL                               │
-│                                                              │
+│                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
 
