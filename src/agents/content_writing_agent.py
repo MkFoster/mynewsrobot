@@ -12,7 +12,7 @@ This agent:
 import logging
 from typing import Any, Dict
 
-from google.adk.agents.llm_agent import Agent
+from google.adk import Agent
 
 from ..utils.config_loader import config_loader
 from ..utils.date_formatter import format_newsletter_date
@@ -21,21 +21,28 @@ logger = logging.getLogger(__name__)
 
 # Agent configuration
 AGENT_NAME = "ContentWritingAgent"
-AGENT_MODEL = "gemini-2.0-flash-exp"
+AGENT_MODEL = "gemini-2.5-flash"  # Updated to higher quota model
 AGENT_DESCRIPTION = (
     "Writes article summaries in user's personal style and formats for publication"
 )
+AGENT_OUTPUT_KEY = "newsletter_content"  # Only pass newsletter HTML to next agent
 
 AGENT_INSTRUCTION = """
-You are a content writing agent responsible for creating the weekly newsletter.
+You are a content writing agent responsible for creating the weekly newsletter from RSS feed data.
 
 Your tasks:
-1. Receive 20 selected articles with full content
+1. Receive 20 selected articles with RSS metadata (URL, title, excerpt, published_date)
 2. Load writing style guidelines from configuration
 3. Write a summary for each article (~200 tokens, ~150 words)
 4. Generate newsletter title with current date
 5. Create newsletter excerpt (150-200 words)
 6. Format everything for WordPress publication
+
+Content Sources:
+- All articles come from RSS feeds with metadata: title, excerpt, URL, and date
+- RSS excerpts provide the article summary - use this as your primary source
+- No full article content is extracted - this is a smart RSS reader
+- Expand and personalize the RSS excerpt in your writing style
 
 Writing Style Guidelines:
 - Study the style examples from mkfoster.com and fireflywp.com
@@ -47,34 +54,30 @@ Writing Style Guidelines:
 
 Article Summary Guidelines (CRITICAL):
 - Each summary must be ~200 tokens (approximately 150 words)
-- Include what the article is about
+- Use the RSS excerpt as your foundation - it's already a good summary
+- Expand on the excerpt with your perspective and context
 - Highlight key takeaways or insights
 - Explain why it's interesting or valuable
 - Always include the source link
 - Maintain consistent voice across all summaries
+- Personalize the content - make it sound like you're recommending these articles to a friend
 
 Newsletter Format:
-- Title: "Mark's Weekly Update: {date}" (e.g., "Mark's Weekly Update: November 30th, 2025")
-- Excerpt: 150-200 word overview of the week's themes
-- Introduction: Brief context about the week's content
-- Articles: 20 numbered items with summaries
-- Conclusion: Key takeaways or themes
+- Do NOT include the main newsletter title in the HTML (WordPress displays it separately)
+- Start with a brief introduction paragraph (150-200 words)
+- Then present all 20 articles as numbered items
+- End with a brief conclusion about the week's themes
 
 HTML Structure:
-- Use <h2> for section headers
-- Use <h3> for article titles  
-- Use <p> for summaries
+- Do NOT include <h1> or the main title - WordPress adds this automatically
+- Start directly with an introductory <p> paragraph
+- Use <ol> for the numbered list of articles
+- Use <h3> for individual article titles within the list
+- Use <p> for article summaries
 - Use <a href="..."> for links
-- Use <ol> for numbered list of articles
-- Clean, semantic HTML only
+- Clean, semantic HTML only - no wrapper divs or containers
 
-Output format:
-Return a JSON object with:
-- title: Newsletter title with formatted date
-- excerpt: 150-200 word excerpt
-- html_content: Full HTML content with introduction, articles, conclusion
-- word_count: Total word count
-- article_summaries: List of individual article summaries with word counts
+✍️ After writing the newsletter, provide ONLY the HTML content (no title, just intro + articles + conclusion).
 """
 
 
@@ -96,6 +99,7 @@ class ContentWritingAgent:
             description=AGENT_DESCRIPTION,
             instruction=AGENT_INSTRUCTION,
             tools=[],  # No tools - uses LLM generation only
+            output_key=AGENT_OUTPUT_KEY,  # Limit context passed to next agent
         )
 
         logger.info(f"Created {AGENT_NAME} with model {AGENT_MODEL}")

@@ -13,54 +13,29 @@ This agent:
 import logging
 from typing import Any, Dict
 
-from google.adk.agents.llm_agent import Agent
+from google.adk import Agent
 
-from ..tools import WordPressTool
+from ..tools import publish_to_wordpress
 from ..utils.config_loader import config_loader
 
 logger = logging.getLogger(__name__)
 
 # Agent configuration
 AGENT_NAME = "PublishingAgent"
-AGENT_MODEL = "gemini-2.0-flash-exp"
+AGENT_MODEL = "gemini-2.5-flash"  # Updated to higher quota model
 AGENT_DESCRIPTION = "Publishes newsletter content to WordPress as a private post"
+AGENT_OUTPUT_KEY = "publication_result"  # Final result with post URL
 
 AGENT_INSTRUCTION = """
-You are a publishing agent responsible for posting the newsletter to WordPress.
+You are a publishing agent. Your ONLY job is to call the publish_to_wordpress tool.
 
-Your tasks:
-1. Receive formatted newsletter with title, excerpt, and HTML content
-2. Load WordPress configuration (site URL, credentials)
-3. Use WordPressTool to create a new post with:
-   - Title from the newsletter
-   - Content (full HTML)
-   - Excerpt
-   - Status: "private" (not published publicly)
-   - Categories: ["WeeklySummary"]
-4. Return publication confirmation with URLs
+When you receive a request:
+1. Extract the title, content, status, categories, and excerpt from the user's message
+2. IMMEDIATELY call the publish_to_wordpress tool with those parameters
+3. Do NOT provide any text response until AFTER you've called the tool
+4. After the tool returns results, share the post_url and edit_url from the response
 
-Publishing Guidelines:
-- Always set status to "private" - posts should not be publicly visible
-- Always add "WeeklySummary" category
-- Include both the excerpt and full content
-- Preserve HTML formatting exactly as provided
-- Handle errors gracefully and report them
-
-Success Criteria:
-- Post created successfully in WordPress
-- Post is marked as private
-- WeeklySummary category is assigned
-- Both post URL and edit URL are returned
-
-Output format:
-Return a JSON object with:
-- success: boolean
-- post_id: WordPress post ID
-- post_url: Public URL (will show 404 if private)
-- edit_url: WordPress admin edit URL
-- status: Post status ("private")
-- categories: List of assigned categories
-- error: Error message if failed
+CRITICAL: You MUST call publish_to_wordpress. Do not explain, do not summarize - just call the tool first.
 """
 
 
@@ -75,25 +50,14 @@ class PublishingAgent:
         Returns:
             Configured Agent instance with WordPress tool
         """
-        # Load WordPress configuration
-        wp_config = config_loader.get_wordpress_config()
-        wp_settings = wp_config.get("wordpress", {})
-
-        # Initialize WordPress tool
-        wordpress_tool = WordPressTool(
-            site_url=wp_settings.get("site_url", "https://mkfoster.com"),
-            username=config_loader.get_env("WORDPRESS_USERNAME", ""),
-            app_password=config_loader.get_env("WORDPRESS_APP_PASSWORD", ""),
-            api_endpoint=wp_settings.get("api_endpoint", "/wp-json/wp/v2"),
-        )
-
-        # Create the agent with ADK
+        # Create the agent with function-based tool
         agent = Agent(
             name=AGENT_NAME,
             model=AGENT_MODEL,
             description=AGENT_DESCRIPTION,
             instruction=AGENT_INSTRUCTION,
-            tools=[wordpress_tool],
+            tools=[publish_to_wordpress],
+            output_key=AGENT_OUTPUT_KEY,  # Final output
         )
 
         logger.info(f"Created {AGENT_NAME} with model {AGENT_MODEL}")

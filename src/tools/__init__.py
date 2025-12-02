@@ -2,12 +2,14 @@
 Custom tools for MyNewsRobot agents
 """
 
-from .web_scraper_tool import WebScraperTool
-from .bookmark_loader_tool import BookmarkLoaderTool
-from .wordpress_tool import WordPressTool
+from .web_scraper_tool import scrape_web_content
+from .bookmark_loader_tool import load_user_bookmarks
+from .wordpress_tool import publish_to_wordpress
+from .topic_priorities_tool import get_topic_priorities
 
 __all__ = [
-    "WebScraperTool",
-    "BookmarkLoaderTool",
-    "WordPressTool",
+    "scrape_web_content",
+    "load_user_bookmarks",
+    "publish_to_wordpress",
+    "get_topic_priorities",
 ]

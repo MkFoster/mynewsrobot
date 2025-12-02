@@ -14,120 +14,11 @@ from unittest.mock import Mock, patch, MagicMock
 from google.adk.agents.llm_agent import Agent
 
 from src.agents import (
-    NewsResearchAgent,
-    ContentExtractionAgent,
     ContentAnalysisAgent,
     ContentWritingAgent,
     PublishingAgent,
 )
-from src.tools import WebScraperTool, BookmarkLoaderTool, WordPressTool
-
-
-class TestNewsResearchAgent:
-    """Tests for NewsResearchAgent configuration and functionality."""
-
-    def test_create_agent_returns_agent_instance(self):
-        """Test that create_agent returns an ADK Agent instance."""
-        agent = NewsResearchAgent.create_agent()
-        assert isinstance(agent, Agent)
-
-    def test_agent_has_correct_name(self):
-        """Test agent has the correct name."""
-        agent = NewsResearchAgent.create_agent()
-        assert agent.name == "NewsResearchAgent"
-
-    def test_agent_has_correct_model(self):
-        """Test agent uses gemini-2.0-flash-exp model."""
-        agent = NewsResearchAgent.create_agent()
-        assert agent.model == "gemini-2.0-flash-exp"
-
-    def test_agent_has_description(self):
-        """Test agent has a description."""
-        agent = NewsResearchAgent.create_agent()
-        assert agent.description is not None
-        assert len(agent.description) > 0
-
-    def test_agent_has_instruction(self):
-        """Test agent has instruction prompt."""
-        agent = NewsResearchAgent.create_agent()
-        assert agent.instruction is not None
-        assert len(agent.instruction) > 0
-        assert "news research agent" in agent.instruction.lower()
-
-    def test_agent_has_web_scraper_tool(self):
-        """Test agent has WebScraperTool attached."""
-        agent = NewsResearchAgent.create_agent()
-        assert agent.tools is not None
-        tool_types = [type(tool).__name__ for tool in agent.tools]
-        assert "WebScraperTool" in tool_types
-
-    def test_agent_has_bookmark_loader_tool(self):
-        """Test agent has BookmarkLoaderTool attached."""
-        agent = NewsResearchAgent.create_agent()
-        assert agent.tools is not None
-        tool_types = [type(tool).__name__ for tool in agent.tools]
-        assert "BookmarkLoaderTool" in tool_types
-
-    def test_get_news_sources_returns_list(self):
-        """Test get_news_sources returns a list."""
-        sources = NewsResearchAgent.get_news_sources()
-        assert isinstance(sources, list)
-
-    def test_is_processed_returns_boolean(self):
-        """Test is_processed returns a boolean."""
-        result = NewsResearchAgent.is_processed("https://example.com/article")
-        assert isinstance(result, bool)
-
-    def test_mark_as_processed_accepts_list(self):
-        """Test mark_as_processed accepts a list of URLs."""
-        urls = ["https://example.com/article1", "https://example.com/article2"]
-        # Should not raise an exception
-        NewsResearchAgent.mark_as_processed(urls)
-
-
-class TestContentExtractionAgent:
-    """Tests for ContentExtractionAgent configuration and functionality."""
-
-    def test_create_agent_returns_agent_instance(self):
-        """Test that create_agent returns an ADK Agent instance."""
-        agent = ContentExtractionAgent.create_agent()
-        assert isinstance(agent, Agent)
-
-    def test_agent_has_correct_name(self):
-        """Test agent has the correct name."""
-        agent = ContentExtractionAgent.create_agent()
-        assert agent.name == "ContentExtractionAgent"
-
-    def test_agent_has_correct_model(self):
-        """Test agent uses gemini-2.0-flash-exp model."""
-        agent = ContentExtractionAgent.create_agent()
-        assert agent.model == "gemini-2.0-flash-exp"
-
-    def test_agent_has_description(self):
-        """Test agent has a description."""
-        agent = ContentExtractionAgent.create_agent()
-        assert agent.description is not None
-        assert len(agent.description) > 0
-
-    def test_agent_has_instruction(self):
-        """Test agent has instruction prompt."""
-        agent = ContentExtractionAgent.create_agent()
-        assert agent.instruction is not None
-        assert len(agent.instruction) > 0
-        assert "content extraction" in agent.instruction.lower()
-
-    def test_agent_has_web_scraper_tool(self):
-        """Test agent has WebScraperTool attached."""
-        agent = ContentExtractionAgent.create_agent()
-        assert agent.tools is not None
-        tool_types = [type(tool).__name__ for tool in agent.tools]
-        assert "WebScraperTool" in tool_types
-
-    def test_agent_has_one_tool(self):
-        """Test agent has exactly one tool (WebScraperTool)."""
-        agent = ContentExtractionAgent.create_agent()
-        assert agent.tools is not None
-        assert len(agent.tools) == 1
+from src.tools import scrape_web_content, load_user_bookmarks, publish_to_wordpress
 
 
 class TestContentAnalysisAgent:
@@ -144,9 +35,9 @@ class TestContentAnalysisAgent:
         assert agent.name == "ContentAnalysisAgent"
 
     def test_agent_has_correct_model(self):
-        """Test agent uses gemini-2.0-flash-exp model."""
+        """Test agent uses gemini-2.5-flash model."""
         agent = ContentAnalysisAgent.create_agent()
-        assert agent.model == "gemini-2.0-flash-exp"
+        assert agent.model == "gemini-2.5-flash"
 
     def test_agent_has_description(self):
         """Test agent has a description."""
@@ -161,15 +52,18 @@ class TestContentAnalysisAgent:
         assert len(agent.instruction) > 0
         assert "content analysis" in agent.instruction.lower()
 
-    def test_agent_has_no_tools(self):
-        """Test agent has no tools (pure LLM analysis)."""
+    def test_agent_has_get_topic_priorities_tool(self):
+        """Test agent has get_topic_priorities tool."""
         agent = ContentAnalysisAgent.create_agent()
-        # ADK agents may have empty list or None for no tools
-        assert agent.tools is None or len(agent.tools) == 0
+        assert agent.tools is not None
+        assert len(agent.tools) == 1
+        tool_name = agent.tools[0].__name__ if hasattr(agent.tools[0], '__name__') else type(agent.tools[0]).__name__
+        assert tool_name == "get_topic_priorities"
 
-    def test_get_topic_priorities_returns_dict(self):
-        """Test get_topic_priorities returns a dictionary."""
-        priorities = ContentAnalysisAgent.get_topic_priorities()
+    def test_get_topic_priorities_tool_returns_dict(self):
+        """Test get_topic_priorities tool returns a dictionary."""
+        from src.tools import get_topic_priorities
+        priorities = get_topic_priorities()
         assert isinstance(priorities, dict)
 
     def test_instruction_mentions_priority_scale(self):
@@ -195,9 +89,9 @@ class TestContentWritingAgent:
         assert agent.name == "ContentWritingAgent"
 
     def test_agent_has_correct_model(self):
-        """Test agent uses gemini-2.0-flash-exp model."""
+        """Test agent uses gemini-2.5-flash model."""
         agent = ContentWritingAgent.create_agent()
-        assert agent.model == "gemini-2.0-flash-exp"
+        assert agent.model == "gemini-2.5-flash"
 
     def test_agent_has_description(self):
         """Test agent has a description."""
@@ -280,7 +174,7 @@ class TestPublishingAgent:
         mock_config.get_env.return_value = "test_value"
 
         agent = PublishingAgent.create_agent()
-        assert agent.model == "gemini-2.0-flash-exp"
+        assert agent.model == "gemini-2.5-flash"
 
     @patch("src.agents.publishing_agent.config_loader")
     def test_agent_has_description(self, mock_config):
@@ -315,7 +209,7 @@ class TestPublishingAgent:
 
     @patch("src.agents.publishing_agent.config_loader")
     def test_agent_has_wordpress_tool(self, mock_config):
-        """Test agent has WordPressTool attached."""
+        """Test agent has publish_to_wordpress tool attached."""
         mock_config.get_wordpress_config.return_value = {
             "wordpress": {
                 "site_url": "https://example.com",
@@ -326,12 +220,12 @@ class TestPublishingAgent:
 
         agent = PublishingAgent.create_agent()
         assert agent.tools is not None
-        tool_types = [type(tool).__name__ for tool in agent.tools]
-        assert "WordPressTool" in tool_types
+        tool_names = [tool.__name__ if hasattr(tool, '__name__') else type(tool).__name__ for tool in agent.tools]
+        assert "publish_to_wordpress" in tool_names
 
     @patch("src.agents.publishing_agent.config_loader")
     def test_agent_has_one_tool(self, mock_config):
-        """Test agent has exactly one tool (WordPressTool)."""
+        """Test agent has exactly one tool (publish_to_wordpress)."""
         mock_config.get_wordpress_config.return_value = {
             "wordpress": {
                 "site_url": "https://example.com",
@@ -394,15 +288,13 @@ class TestAgentIntegration:
         mock_config.get_env.return_value = "test_value"
 
         agents = [
-            NewsResearchAgent.create_agent(),
-            ContentExtractionAgent.create_agent(),
             ContentAnalysisAgent.create_agent(),
             ContentWritingAgent.create_agent(),
             PublishingAgent.create_agent(),
         ]
 
         models = [agent.model for agent in agents]
-        assert all(model == "gemini-2.0-flash-exp" for model in models)
+        assert all(model == "gemini-2.5-flash" for model in models)
 
     @patch("src.agents.publishing_agent.config_loader")
     def test_all_agents_have_unique_names(self, mock_config):
@@ -416,8 +308,6 @@ class TestAgentIntegration:
         mock_config.get_env.return_value = "test_value"
 
         agents = [
-            NewsResearchAgent.create_agent(),
-            ContentExtractionAgent.create_agent(),
             ContentAnalysisAgent.create_agent(),
             ContentWritingAgent.create_agent(),
             PublishingAgent.create_agent(),
@@ -438,8 +328,6 @@ class TestAgentIntegration:
         mock_config.get_env.return_value = "test_value"
 
         agents = [
-            NewsResearchAgent.create_agent(),
-            ContentExtractionAgent.create_agent(),
             ContentAnalysisAgent.create_agent(),
             ContentWritingAgent.create_agent(),
             PublishingAgent.create_agent(),
@@ -461,8 +349,6 @@ class TestAgentIntegration:
         mock_config.get_env.return_value = "test_value"
 
         agents = [
-            NewsResearchAgent.create_agent(),
-            ContentExtractionAgent.create_agent(),
             ContentAnalysisAgent.create_agent(),
             ContentWritingAgent.create_agent(),
             PublishingAgent.create_agent(),
@@ -474,17 +360,9 @@ class TestAgentIntegration:
 
     def test_tool_usage_across_agents(self):
         """Test that tools are correctly distributed across agents."""
-        # NewsResearchAgent should have 2 tools
-        news_agent = NewsResearchAgent.create_agent()
-        assert len(news_agent.tools) == 2
-
-        # ContentExtractionAgent should have 1 tool
-        extraction_agent = ContentExtractionAgent.create_agent()
-        assert len(extraction_agent.tools) == 1
-
-        # ContentAnalysisAgent should have 0 tools
+        # ContentAnalysisAgent should have 1 tool (get_topic_priorities)
         analysis_agent = ContentAnalysisAgent.create_agent()
-        assert analysis_agent.tools is None or len(analysis_agent.tools) == 0
+        assert len(analysis_agent.tools) == 1
 
         # ContentWritingAgent should have 0 tools
         writing_agent = ContentWritingAgent.create_agent()

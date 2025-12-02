@@ -1,5 +1,5 @@
 """
-WebScraperTool - Fetch and extract article content from URLs
+Web scraping tool - Fetch and extract article content from URLs
 
 Supports both RSS feeds and HTML pages. For RSS feeds, uses content tags
 when available to avoid fetching full HTML. For HTML pages, extracts
@@ -13,97 +13,71 @@ from urllib.parse import urljoin, urlparse
 import feedparser
 import requests
 from bs4 import BeautifulSoup
-from google.adk.tools.base_tool import BaseTool
-from google.adk.tools.tool_context import ToolContext
 from newspaper import Article
 
 logger = logging.getLogger(__name__)
 
+# Module-level session for reuse
+_session = requests.Session()
+_session.headers.update({
+    "User-Agent": (
+        "Mozilla/5.0 (compatible; MyNewsRobot/1.0; "
+        "+https://mkfoster.com)"
+    )
+})
 
-class WebScraperTool(BaseTool):
-    """Custom tool to fetch and parse content from web pages and RSS feeds."""
 
-    def __init__(self):
-        super().__init__(
-            name="web_scraper",
-            description=(
-                "Fetches content from web pages and RSS feeds. "
-                "Supports RSS/Atom feeds and HTML article pages. "
-                "Returns article metadata, content, and discovered links."
-            ),
-        )
-        self.session = requests.Session()
-        self.session.headers.update(
-            {
-                "User-Agent": (
-                    "Mozilla/5.0 (compatible; MyNewsRobot/1.0; "
-                    "+https://mkfoster.com)"
-                )
-            }
-        )
+def scrape_web_content(
+    url: str,
+    mode: str = "auto",
+    extract_links: bool = False,
+    timeout: int = 30,
+) -> Dict[str, Any]:
+    """
+    Fetch and parse content from a web page or RSS feed.
 
-    async def run_async(
-        self, *, args: Dict[str, Any], tool_context: ToolContext
-    ) -> Dict[str, Any]:
-        """Run the tool asynchronously (required by ADK)."""
-        return self.run(
-            url=args["url"],
-            mode=args.get("mode", "auto"),
-            extract_links=args.get("extract_links", False),
-            timeout=args.get("timeout", 30),
-        )
+    Supports both RSS/Atom feeds and HTML article pages. For RSS feeds,
+    extracts article metadata and descriptions. For HTML pages, extracts
+    full article content.
 
-    def run(
-        self,
-        url: str,
-        mode: str = "auto",
-        extract_links: bool = False,
-        timeout: int = 30,
-    ) -> Dict[str, Any]:
-        """
-        Fetch and parse content from a URL.
+    Args:
+        url: The URL to fetch (RSS feed or HTML page)
+        mode: Detection mode - 'auto' (auto-detect), 'rss' (force RSS), or 'html' (force HTML)
+        extract_links: Whether to extract article links from the page
+        timeout: Request timeout in seconds
 
-        Args:
-            url: URL to fetch
-            mode: 'auto', 'rss', or 'html' (auto-detects if 'auto')
-            extract_links: Whether to extract article links from the page
-            timeout: Request timeout in seconds
+    Returns:
+        Dictionary containing:
+        - success: bool indicating if fetch succeeded
+        - type: 'rss' or 'html'
+        - title: Page/feed title
+        - content: Article content (for HTML) or feed description (for RSS)
+        - entries: List of articles (for RSS feeds)
+        - error: Error message if failed
+    """
+    logger.info(f"Fetching URL: {url} (mode={mode})")
 
-        Returns:
-            Dictionary containing:
-            - success: bool
-            - url: str
-            - type: 'rss' or 'html'
-            - title: Optional[str]
-            - content: Optional[str]
-            - summary: Optional[str]
-            - author: Optional[str]
-            - published_date: Optional[str]
-            - links: List[Dict] (if extract_links=True)
-            - error: Optional[str]
-        """
-        logger.info(f"Fetching URL: {url} (mode={mode})")
+    try:
+        # Auto-detect content type if needed
+        if mode == "auto":
+            mode = _detect_content_type(url)
+            logger.info(f"Auto-detected content type: {mode}")
 
-        try:
-            # Auto-detect content type if needed
-            if mode == "auto":
-                mode = self._detect_content_type(url)
-                logger.info(f"Auto-detected content type: {mode}")
+        if mode == "rss":
+            return _parse_rss_feed(url)
+        else:
+            return _parse_html_page(url, extract_links, timeout)
 
-            if mode == "rss":
-                return self._parse_rss_feed(url)
-            else:
-                return self._parse_html_page(url, extract_links, timeout)
+    except Exception as e:
+        logger.error(f"Error fetching {url}: {e}", exc_info=True)
+        return {
+            "success": False,
+            "url": url,
+            "error": str(e),
+        }
 
-        except Exception as e:
-            logger.error(f"Error fetching {url}: {e}", exc_info=True)
-            return {
-                "success": False,
-                "url": url,
-                "error": str(e),
-            }
 
-    def _detect_content_type(self, url: str) -> str:
+def _detect_content_type(url: str) -> str:
         """
         Detect if URL is an RSS feed or HTML page.
 
@@ -129,7 +103,7 @@ class WebScraperTool(BaseTool):
 
         # Try a HEAD request to check Content-Type
         try:
-            response = self.session.head(url, timeout=10, allow_redirects=True)
+            response = _session.head(url, timeout=10, allow_redirects=True)
             content_type = response.headers.get("Content-Type", "").lower()
             if any(
                 rss_type in content_type
@@ -141,7 +115,8 @@ class WebScraperTool(BaseTool):
 
         return "html"
 
-    def _parse_rss_feed(self, url: str) -> Dict[str, Any]:
+
+def _parse_rss_feed(url: str) -> Dict[str, Any]:
         """
         Parse an RSS/Atom feed.
 
@@ -207,9 +182,10 @@ class WebScraperTool(BaseTool):
             "entry_count": len(entries),
         }
 
-    def _parse_html_page(
-        self, url: str, extract_links: bool, timeout: int
-    ) -> Dict[str, Any]:
+
+def _parse_html_page(
+    url: str, extract_links: bool, timeout: int
+) -> Dict[str, Any]:
         """
         Parse an HTML article page.
 
@@ -245,11 +221,12 @@ class WebScraperTool(BaseTool):
 
         # Extract links if requested
         if extract_links:
-            result["links"] = self._extract_article_links(url, article.html)
+            result["links"] = _extract_article_links(url, article.html)
 
         return result
 
-    def _extract_article_links(self, base_url: str, html: str) -> List[Dict[str, str]]:
+
+def _extract_article_links(base_url: str, html: str) -> List[Dict[str, str]]:
         """
         Extract article links from HTML.
 
@@ -296,8 +273,3 @@ class WebScraperTool(BaseTool):
 
         logger.info(f"Extracted {len(links)} links from {base_url}")
         return links
-
-    def close(self):
-        """Clean up resources."""
-        if self.session:
-            self.session.close()

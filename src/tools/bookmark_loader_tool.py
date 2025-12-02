@@ -1,5 +1,5 @@
 """
-BookmarkLoaderTool - Load weekly user bookmarks from configuration
+Bookmark loader tool - Load weekly user bookmarks from configuration
 
 Supports loading from local YAML files or Google Cloud Storage.
 Bookmarks always get highest priority (11) in article selection.
@@ -9,81 +9,63 @@ import logging
 from typing import Any, Dict, List
 
 import yaml
-from google.adk.tools.base_tool import BaseTool
-from google.adk.tools.tool_context import ToolContext
 
 logger = logging.getLogger(__name__)
 
 
-class BookmarkLoaderTool(BaseTool):
-    """Custom tool to load weekly bookmarks from configuration."""
+def load_user_bookmarks(
+    config_path: str = "config/weekly_bookmarks.yaml",
+    refresh: bool = False
+) -> Dict[str, Any]:
+    """
+    Load weekly user bookmarks from configuration file.
 
-    def __init__(self, config_path: str = "config/weekly_bookmarks.yaml"):
-        """
-        Initialize bookmark loader.
+    Loads bookmarks from config/weekly_bookmarks.yaml. Bookmarks are
+    articles manually selected by the user for inclusion in the newsletter.
+    They always get highest priority (11) in article selection.
 
-        Args:
-            config_path: Path to bookmarks YAML file (local or GCS path)
-        """
-        super().__init__(
-            name="bookmark_loader",
-            description=(
-                "Loads weekly user bookmarks from configuration file. "
-                "Supports local files and Google Cloud Storage paths."
-            ),
-        )
-        self.config_path = config_path
+    Args:
+        config_path: Path to bookmarks YAML file (local or GCS path)
+        refresh: Force reload from source (ignore cache)
 
-    async def run_async(
-        self, *, args: Dict[str, Any], tool_context: ToolContext
-    ) -> Dict[str, Any]:
-        """Run the tool asynchronously (required by ADK)."""
-        return self.run(refresh=args.get("refresh", False))
+    Returns:
+        Dictionary containing:
+        - success: bool indicating if load succeeded
+        - bookmarks: List of bookmark dicts with url, note, submitted_date
+        - count: Number of bookmarks loaded
+        - source: File path of bookmark config
+        - error: Error message if failed
+    """
+    logger.info(f"Loading bookmarks from: {config_path}")
 
-    def run(self, refresh: bool = False) -> Dict[str, Any]:
-        """
-        Load bookmarks from configuration.
+    try:
+        # Check if GCS path
+        if config_path.startswith("gs://"):
+            return _load_from_gcs(config_path)
+        else:
+            return _load_from_local(config_path)
 
-        Args:
-            refresh: Force reload from source (ignore cache)
+    except FileNotFoundError:
+        logger.warning(f"Bookmark file not found: {config_path}")
+        return {
+            "success": True,
+            "bookmarks": [],
+            "count": 0,
+            "source": config_path,
+            "warning": "Bookmark file not found, returning empty list",
+        }
+    except Exception as e:
+        logger.error(f"Error loading bookmarks: {e}", exc_info=True)
+        return {
+            "success": False,
+            "bookmarks": [],
+            "count": 0,
+            "source": config_path,
+            "error": str(e),
+        }
 
-        Returns:
-            Dictionary containing:
-            - success: bool
-            - bookmarks: List[Dict] with url, note, submitted_date
-            - count: int
-            - source: str (file path)
-            - error: Optional[str]
-        """
-        logger.info(f"Loading bookmarks from: {self.config_path}")
 
-        try:
-            # Check if GCS path
-            if self.config_path.startswith("gs://"):
-                return self._load_from_gcs(self.config_path)
-            else:
-                return self._load_from_local(self.config_path)
-
-        except FileNotFoundError:
-            logger.warning(f"Bookmark file not found: {self.config_path}")
-            return {
-                "success": True,
-                "bookmarks": [],
-                "count": 0,
-                "source": self.config_path,
-                "warning": "Bookmark file not found, returning empty list",
-            }
-        except Exception as e:
-            logger.error(f"Error loading bookmarks: {e}", exc_info=True)
-            return {
-                "success": False,
-                "bookmarks": [],
-                "count": 0,
-                "source": self.config_path,
-                "error": str(e),
-            }
-
-    def _load_from_local(self, file_path: str) -> Dict[str, Any]:
+def _load_from_local(file_path: str) -> Dict[str, Any]:
         """
         Load bookmarks from local YAML file.
 
@@ -127,7 +109,8 @@ class BookmarkLoaderTool(BaseTool):
             "source": file_path,
         }
 
-    def _load_from_gcs(self, gcs_path: str) -> Dict[str, Any]:
+
+def _load_from_gcs(gcs_path: str) -> Dict[str, Any]:
         """
         Load bookmarks from Google Cloud Storage.
 

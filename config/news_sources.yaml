@@ -25,15 +25,6 @@ news_sources:
               name: "Smashing Magazine - RSS Feed"
               type: "rss"
 
-    ai_ml:
-        pages:
-            - url: "https://openai.com/blog/rss/"
-              name: "OpenAI Blog - RSS Feed"
-              type: "rss"
-            - url: "https://blog.google/technology/ai/"
-              name: "Google AI Blog"
-              type: "html"
-
     # Add more categories and sources as needed
     # Example:
     # cloud:
