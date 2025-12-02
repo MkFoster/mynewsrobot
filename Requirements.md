@@ -1,23 +1,118 @@
-Requirements:
-My project idea is a concierge agent that creates a custom weekly news summary/newsletter of topics I'm interested in and posts it to my WordPress blog.
-The project must be built using Google ADK.
-I want to specify specific sites and pages the agent should check for news updates.  Initially these can be just hard-coded in a project file but eventually I would like an admin interface so I can easily customize and update the list.
-In addition, during the week I often run across articles on the web that interest me.  I bookmark these articles and never look at them again.  In addition to the regular sites the agent would check, I want to provide an input file with these links so the agent will check and summarize them in addition to the news.  Eventually I would like to provide these in an admin interface as well.  Maybe even via an Chrome browser extension.
-I want to provide a list of topics of interest to me and somehow rank them for the agent.  Initially I am thinking each weekly summary would have about 20 news items so I need to help the agent prioritize what it finds.
-I am visually driven.  I like Arstechnica.com because they usually have some type of visual element with each article.  Take a look here: https://arstechnica.com/  I am open to ideas on how to handle this… perhaps generate a photo or two with AI.  I don’t know that it makes sense to put a photo with every news item summary but perhaps a few.
-I would like the summary written in my style.  I wrote every article on these two websites so they would be a good sample: https://mkfoster.com/ and https://fireflywp.com/
-Each weekly summary should have a title “Mark’s Weekly Update:” followed by the date.  I.e., “Mark’s Weekly Update: November 28th, 2025”
-Each weekly summary should also have an excerpt about 
-Each summary should have a “featured” image captures the theme of that week in a 3:2 aspect ratio.  This will be posted to WordPress along with the article.
-Each summary should contain a note that the content
-The agent should:
-Kick off on a weekly schedule
-Check all the applicable websites
-Pick the top 20 news items or articles prioritizing any bookmarks I have submitted for the week.
-Write individual summaries for each item and cite/link sources.
-Add images for each item.
-Add a summary excerpt and featured image.
-Post the summary and images to my WordPress site (initially this will be a private post)
-Stretch goal: Create an audio podcast program based on the summary I can listen to in the car.
-Stretch goal: Use Google Veo to generate subtle animations or videos around weekly themes.  I.e., an animated ai flow diagram if there is a lot of AI stuff happening that week.
-Let me know if you see any opportunities for high value-add features I don’t have here.
+# MyNewsRobot - Requirements
+
+## Project Overview
+MyNewsRobot is an intelligent AI agent system that creates personalized weekly news summaries and publishes them to WordPress. Built with Google's Agent Development Kit (ADK), it aggregates content from RSS feeds, analyzes and prioritizes articles based on user-defined topics, and generates summaries in a consistent style.
+
+## Core Requirements
+
+### Technology Stack
+- ✅ **Built with Google ADK** - Multi-agent orchestration framework
+- ✅ **Python 3.14** - Primary development language
+- ✅ **Gemini 2.5 Flash** - LLM model for all agents
+- ✅ **FastAPI** - REST API server for workflow execution
+- ✅ **WordPress REST API** - Publishing endpoint with Application Password authentication
+
+### Content Discovery
+- ✅ **RSS Feed Sources** - All news sources are RSS feeds configured in `config/news_sources.yaml`
+- ✅ **Category Organization** - Sources organized by category (Tech, AI, WordPress, Security, etc.)
+- ✅ **RSS-Only Architecture** - Uses RSS excerpts only, no web scraping or HTML parsing
+- ✅ **User Bookmarks** - Weekly bookmarks file (`config/weekly_bookmarks.yaml`) for manual article submission
+- ✅ **Automatic Priority** - Bookmarks automatically get highest priority (11) and are always included
+
+### Topic Prioritization
+- ✅ **Topic Configuration** - Topics defined in `config/topic_priorities.yaml` with priority scores (7-11 scale)
+- ✅ **Keyword Matching** - Articles matched to topics based on keywords
+- ✅ **Priority-Based Selection** - Top 20 articles selected based on topic priorities
+- ✅ **Topic Diversity** - Maximum 10 articles per topic to ensure variety
+- ✅ **Bookmark Override** - Bookmarks always included regardless of topic limits
+
+### Content Generation
+- ✅ **Writing Style Guidelines** - Style configuration in `config/writing_style.yaml`
+- ✅ **Style References** - Based on articles from mkfoster.com and fireflywp.com
+- ✅ **Article Summaries** - ~150 words per article, expanding on RSS excerpt
+- ✅ **Source Citations** - All summaries include links to original articles
+- ✅ **AI Attribution** - Header "From MyNewsRobot:" identifies AI-generated content
+- ✅ **Neutral Voice** - No personal pronouns in intro/conclusion to clarify content is bot-generated
+- ✅ **HTML Formatting** - Clean semantic HTML for WordPress
+
+### Newsletter Format
+- ✅ **Title Format** - "Mark's Weekly Update: [Date]" (e.g., "Mark's Weekly Update: November 30th, 2025")
+- ✅ **Excerpt** - 150-200 word summary for WordPress post preview
+- ✅ **Structure** - H2 header ("From MyNewsRobot:"), intro paragraph, 20 numbered articles, conclusion
+- ✅ **Content Organization** - Ordered list with H3 headings for each article title
+
+### WordPress Publishing
+- ✅ **Automated Publishing** - Publishes to WordPress via REST API
+- ✅ **Private Posts** - Creates private posts for manual review before public visibility
+- ✅ **Category Assignment** - Automatically assigns "WeeklySummary" category
+- ✅ **Application Password Auth** - Uses WordPress Application Passwords (Basic Auth)
+- ✅ **Post Metadata** - Includes title, excerpt, content, status, and categories
+
+### Workflow Execution
+- ✅ **Multi-Agent Architecture** - 3 sequential agents:
+  - ContentAnalysisAgent - Selects top 20 articles based on priorities
+  - ContentWritingAgent - Generates newsletter content in user's style
+  - PublishingAgent - Publishes to WordPress
+- ✅ **FastAPI Endpoint** - `/run` endpoint to trigger workflow
+- ✅ **Data Persistence** - Saves intermediate results (discovered_articles.json, analyzed_articles.json, newsletter_draft.html)
+- ✅ **Error Handling** - Comprehensive logging and error recovery
+- ⏳ **Weekly Scheduling** - Cloud Scheduler integration (deployment pending)
+
+### Observability
+- ⏳ **Datadog Integration** - Telemetry, metrics, and alerts (planned)
+- ⏳ **LLM Metrics** - Token usage, latency, cost tracking (planned)
+- ⏳ **Detection Rules** - Alerts for failures, slow execution, low article count (planned)
+- ⏳ **Dashboards** - Workflow metrics, topic distribution, success rates (planned)
+
+## Future Enhancements
+
+### Phase 1: Visual Content (Deferred)
+- 🎯 **AI-Generated Images** - Use Google Imagen for article visuals
+- 🎯 **Featured Image** - Generate themed image (3:2 aspect ratio) for each newsletter
+- 🎯 **Visual Variety** - Select key articles for image generation (not every article)
+
+### Phase 2: User Interface
+- 🎯 **Web Admin Interface** - Manage sources, topics, and bookmarks via UI
+- 🎯 **Chrome Extension** - Submit bookmarks with one click during browsing
+- 🎯 **Configuration Editor** - Visual editor for YAML configuration files
+
+### Phase 3: Enhanced Distribution
+- 🎯 **Email Delivery** - Send newsletter via email (SendGrid/Mailgun)
+- 🎯 **Multi-Platform Publishing** - Support additional publishing platforms
+- 🎯 **Public Post Option** - Automatic public publishing after manual review
+
+### Stretch Goals
+- 🚀 **Audio Podcast** - Generate spoken version of newsletter using Google TTS
+- 🚀 **Video Animations** - Use Google Veo to create animated visuals for weekly themes
+- 🚀 **Semantic Topic Matching** - Use embeddings instead of keyword matching
+- 🚀 **Engagement Analytics** - Track reader engagement and adjust content selection
+- 🚀 **Multi-Language Support** - Generate newsletters in multiple languages
+- 🚀 **Smart Scheduling** - Optimize delivery time based on engagement patterns
+
+## Implementation Status
+
+### ✅ Completed (v0.1.0)
+- Multi-agent workflow with Google ADK
+- RSS-only content discovery
+- Topic-based prioritization with bookmarks
+- Newsletter generation with style guidelines
+- WordPress publishing with Application Passwords
+- AI attribution and neutral voice
+- Comprehensive testing (62 tests passing)
+- Local development environment
+
+### ⏳ In Progress
+- Google Cloud Run deployment
+- Cloud Scheduler integration
+- Datadog observability
+
+### 🎯 Planned
+- Image generation (Imagen API)
+- Web admin interface
+- Chrome extension
+- Email distribution
+
+### 🚀 Future Exploration
+- Audio podcast generation
+- Video animations (Veo)
+- Advanced analytics

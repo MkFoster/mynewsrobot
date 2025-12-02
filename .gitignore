@@ -205,3 +205,8 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# MyNewsRobot - Dynamically generated files
+src/discovered_articles.json
+src/analyzed_articles.json
+src/newsletter_draft.html

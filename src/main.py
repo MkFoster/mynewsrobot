@@ -386,8 +386,6 @@ async def publish_newsletter(newsletter_html: str, newsletter_date: str) -> Dict
     
     return publication_result
 
-
-# Correcting misplaced code and ensuring proper indentation
 async def run_workflow(request: RunRequest):
     start_time = datetime.now()
 
